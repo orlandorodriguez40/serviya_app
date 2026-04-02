@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class AuthService {
+  // Asegúrate de que la ruta sea exacta a donde están tus archivos PHP
   final String baseUrl = "https://tupaginalista.com/serviya_api/auth";
 
   // 1. INICIAR SESIÓN
@@ -12,10 +13,19 @@ class AuthService {
     final url = Uri.parse("$baseUrl/login.php");
 
     try {
-      final response = await http.post(
-        url,
-        body: jsonEncode({"email": emailOrUsername, "password": password}),
-      );
+      final response = await http
+          .post(
+            url,
+            // Agregamos headers para evitar el error 505 y asegurar formato JSON
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+            },
+            body: jsonEncode({"email": emailOrUsername, "password": password}),
+          )
+          .timeout(
+            const Duration(seconds: 15),
+          ); // Tiempo de espera para móviles
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -33,7 +43,6 @@ class AuthService {
 
           return UserModel.fromJson(userData);
         } else {
-          // 🚨 LANZAR EXCEPCIÓN: Enviamos el mensaje real del PHP a la pantalla
           final errorMsg =
               responseData['message'] ?? "Credenciales incorrectas";
           dev.log("Fallo en login: $errorMsg", name: "AuthService");
@@ -44,14 +53,16 @@ class AuthService {
           "Error de servidor: ${response.statusCode}",
           name: "AuthService",
         );
-        throw Exception("Error en el servidor (${response.statusCode})");
+        throw Exception("Servidor no disponible (${response.statusCode})");
       }
     } catch (e) {
-      // Si el error ya es una Exception nuestra, la relanzamos
       if (e.toString().contains("Exception:")) rethrow;
 
       dev.log("Error de conexión", name: "AuthService", error: e);
-      throw Exception("Error de conexión: Verifica tu internet.");
+      // Este mensaje ayuda al usuario a saber si es su internet o el permiso
+      throw Exception(
+        "No se pudo conectar con el servidor. Verifica tu conexión.",
+      );
     }
   }
 
@@ -60,17 +71,22 @@ class AuthService {
     final url = Uri.parse("$baseUrl/update_profile.php");
 
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "id": user.id,
-          "nombre": user.nombre,
-          "telefono": user.telefono,
-          "direccion": user.direccion,
-          "especialidades": user.especialidades,
-        }),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+            },
+            body: jsonEncode({
+              "id": user.id,
+              "nombre": user.nombre,
+              "telefono": user.telefono,
+              "direccion": user.direccion,
+              "especialidades": user.especialidades,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final prefs = await SharedPreferences.getInstance();

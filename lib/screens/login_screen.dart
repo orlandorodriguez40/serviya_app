@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // 🖼️ ÁREA DEL LOGOTIPO
                 Image.asset(
-                  'assets/images/logotipo.PNG', // Ruta actualizada con .PNG
+                  'assets/images/logotipo.png', // Ruta actualizada con .PNG
                   height: 180,
                   fit: BoxFit.contain,
                   // Si la imagen falla, muestra el icono de respaldo
